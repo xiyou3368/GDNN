@@ -5,7 +5,7 @@ import tensorflow as tf
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer('num_epochs', 20, 'number of epochs to train')
+flags.DEFINE_integer('num_epochs', 13, 'number of epochs to train')
 flags.DEFINE_integer('labels', 1, 'number of label classes')
 flags.DEFINE_integer('graph_pad_length', 64, 'graph pad length for training')
 flags.DEFINE_integer('feature_dimension', 64, 'feature dimension of the graph')
@@ -16,9 +16,9 @@ flags.DEFINE_float('learn_rate', 1e-2, 'learn rate for training optimization')
 flags.DEFINE_boolean('train',False, 'train mode FLAG')
 
 configs = {
-  'IMDB-BINARY': {
-                'feature_dimension': 136,
-                'graph_pad_length': 136,
+  'IMDB-MULTI': {
+                'feature_dimension': 89,
+                'graph_pad_length': 89,
                 'CE_ratio': 1.0,
                }
 }
@@ -33,12 +33,12 @@ def read_config(config, FLAGS):
 
 
 temp = []
-dataset = ["IMDB-BINARY"]
+dataset = ["IMDB-MULTI"]
 for i in dataset:
   config = configs[i]
   read_config(config, FLAGS)
   tf.reset_default_graph()
-  seed = 4
+  seed = 42
   np.random.seed(seed)
   tf.set_random_seed(seed)
   
