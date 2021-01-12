@@ -3,7 +3,7 @@ from layers import *
 
 
 class GDNN(object):
-  def build_graph(self, placeholders, n=100, d=3, hidden_d=128,u=32, d_a=64, r=16,reuse=False):
+  def build_graph(self, placeholders, n=100, d=3, hidden_d=128,u=16, d_a=64, r=16,reuse=False):
     with tf.variable_scope('SelfAttentiveGraph', reuse=reuse):
       self.n = n
       self.d = d

@@ -91,7 +91,10 @@ def fold_cv(data_index, FLAGS):
         print("Epoch:", '%04d' % (epoch_num), "train_loss=", "{:.5f}".format(epoch_loss))
         if epoch_num == num_epochs -1:
           for i in range(int(total)):
-            num_nodes = num_nodes_all[i]
+            if data_index == "proteins":
+              num_nodes = raw_train_feature_input[i].shape[0]
+            else:
+              num_nodes = num_nodes_all[i]
             batch_input,topo, batch_tags,g_l = (train_feature_input[i],train_structure_input[i], train_feature_input[i].todense(),ally[i])
             batch_input = preprocess_features(batch_input.tolil())
             batch_topo = preprocess_adj(topo)
