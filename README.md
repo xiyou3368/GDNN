@@ -22,7 +22,7 @@ sklearn           0.20.1
 pip install -r requirements.txt
 
 # Dataset
-DD,proteins,IMDB_M,IMDB_B,REDDIT_B
+Default is IMDB_B, for other datasets, please refer to the branches, e.g., DD,proteins,IMDB_M,,REDDIT_B
 
 # Model options
 ```
@@ -34,4 +34,4 @@ DD,proteins,IMDB_M,IMDB_B,REDDIT_B
 ```
 train from scratch
 ```
-python -W ignore main.py
+python -W ignore main.py --train True
