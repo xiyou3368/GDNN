@@ -3,8 +3,9 @@ from layers import *
 
 
 class GDNN(object):
-  def build_graph(self, placeholders, n=100, d=3, hidden_d=128,u=32, d_a=64, r=16,reuse=False):
+  def build_graph(self, placeholders, n=100, d=3, hidden_d=128,u=32, d_a=64, r=16,reuse=False,seed=123):
     with tf.variable_scope('SelfAttentiveGraph', reuse=reuse):
+      seed = seed 
       self.n = n
       self.d = d
       self.d_a = d_a
@@ -23,6 +24,7 @@ class GDNN(object):
                                       adj=self.adj,
                                       features_nonzero=self.features_nonzero,
                                       act=tf.nn.relu,
+                                      seed=seed,
                                       dropout=self.dropout,
                                       logging=False)(self.input_F)
 
@@ -30,6 +32,7 @@ class GDNN(object):
                                            output_dim=self.u,
                                            adj=self.adj,
                                            act=lambda x: x,
+                                           seed=seed,
                                            dropout=self.dropout,
                                            logging=False)(hidden)
        
@@ -50,12 +53,14 @@ class GDNN(object):
                                            output_dim=hidden_d,
                                            adj=self.adj_inverse,
                                            act=tf.nn.relu,
+                                           seed=seed,
                                            dropout=self.dropout,
                                            logging=False)(inverse_H)
       self.reconstruct_X = GraphConvolution(input_dim=hidden_d,
                                            output_dim=self.d,
                                            adj=self.adj,
                                            act=lambda x:x,
+                                           seed=seed,
                                            dropout=self.dropout,
                                            logging=False)(de_hidden)
 

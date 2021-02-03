@@ -10,11 +10,13 @@ from graph.dataset import load
 
 
 
-def fold_cv(data_index, FLAGS):
+
+def fold_cv(data_index, FLAGS,seed=123,epoch_n=20):
+  seed = seed
   if_train = FLAGS.train
   FLAGS = tf.app.flags.FLAGS
   cv_index = FLAGS.cv_index
-  num_epochs = FLAGS.num_epochs
+  num_epochs = epoch_n
   tag_size = FLAGS.labels
   graph_pad_length = FLAGS.graph_pad_length
   feature_dimension = FLAGS.feature_dimension
@@ -30,9 +32,10 @@ def fold_cv(data_index, FLAGS):
     'dropout': tf.placeholder_with_default(0., shape=()),
     'g_labels': tf.placeholder(tf.float32, shape=())
   }
+  # construct graph for graph classification
   with tf.Session() as sess:
     model = GDNN()
-    model.build_graph(n=graph_pad_length,placeholders = placeholders,d =feature_dimension)
+    model.build_graph(n=graph_pad_length,placeholders = placeholders,d =feature_dimension,seed=seed)
     with tf.variable_scope('DownstreamApplication'):
       global_step = tf.Variable(0, trainable=False, name='global_step')
       learn_rate = tf.train.exponential_decay(lr, global_step, FLAGS.decay_step, 0.98, staircase=True)
@@ -46,25 +49,20 @@ def fold_cv(data_index, FLAGS):
       params = tf.trainable_variables()
   
     # load data
-    if data_index == "proteins":
+    if data_index == "proteins" or data_index =="DD":
       raw_train_structure_input,raw_train_feature_input,raw_test_structure_input,raw_test_feature_input,ally,ty = load_nci(data_index)
       # graph padding
-      train_structure_input,train_feature_input = graph_padding(raw_train_structure_input,raw_train_feature_input,graph_pad_length)
-      test_structure_input,test_feature_input = graph_padding(raw_test_structure_input,raw_test_feature_input,graph_pad_length)
+      train_structure_input,train_feature_input = graph_padding(raw_train_structure_input,raw_train_feature_input,graph_pad_length,feature_dimension=feature_dimension)
+      test_structure_input,test_feature_input = graph_padding(raw_test_structure_input,raw_test_feature_input,graph_pad_length,feature_dimension = feature_dimension)
     else:
       train_structure_input, diff, train_feature_input, ally, num_nodes_all = load(data_index)
-      print(train_structure_input[0].shape[-1], train_feature_input[0].shape)
       test_structure_input, diff, test_feature_input, labels, num_nodes = load(data_index)
     total = len(train_feature_input)
-    vtotal = len(test_feature_input)
   
-    if if_train == True:
-      optimizer = tf.train.AdamOptimizer(learn_rate)
-      grad_and_vars = tf.gradients(loss, params)
-      clipped_gradients, _ = tf.clip_by_global_norm(grad_and_vars, 0.5)
-      opt = optimizer.apply_gradients(zip(clipped_gradients, params), global_step=global_step)
-    else:
-      pass
+    optimizer = tf.train.AdamOptimizer(learn_rate)
+    grad_and_vars = tf.gradients(loss, params)
+    clipped_gradients, _ = tf.clip_by_global_norm(grad_and_vars, 0.5)
+    opt = optimizer.apply_gradients(zip(clipped_gradients, params), global_step=global_step)
     sess.run(tf.global_variables_initializer())
     train_emb = []
     if if_train == True:
@@ -73,7 +71,7 @@ def fold_cv(data_index, FLAGS):
         epoch_loss = 0
         step_loss = 0
         for i in range(int(total)):
-          if data_index == "proteins":
+          if data_index == "proteins" or data_index == "DD":
             num_nodes = raw_train_feature_input[i].shape[0]
           else:
             num_nodes = num_nodes_all[i]
@@ -91,7 +89,10 @@ def fold_cv(data_index, FLAGS):
         print("Epoch:", '%04d' % (epoch_num), "train_loss=", "{:.5f}".format(epoch_loss))
         if epoch_num == num_epochs -1:
           for i in range(int(total)):
-            num_nodes = num_nodes_all[i]
+            if data_index == "proteins" or data_index == "DD":
+              num_nodes = raw_train_feature_input[i].shape[0]
+            else:
+              num_nodes = num_nodes_all[i]
             batch_input,topo, batch_tags,g_l = (train_feature_input[i],train_structure_input[i], train_feature_input[i].todense(),ally[i])
             batch_input = preprocess_features(batch_input.tolil())
             batch_topo = preprocess_adj(topo)
@@ -102,7 +103,7 @@ def fold_cv(data_index, FLAGS):
             result = sess.run(tf.reshape(layer_flat,[-1]), feed_dict=feed_dict)
             train_emb.append(result)
           train_emb = np.array(train_emb)
-          np.save('proteins',train_emb)
+          np.save('embeddings',train_emb)
       sess.close()
     else:
       pass
@@ -111,9 +112,7 @@ def fold_cv(data_index, FLAGS):
       prediction = evaluate_embedding(train_emb,ally)
       return prediction
     else:
-      train_emb = np.load("proteins.npy")
-      prediction = evaluate_embedding(train_emb,ally)
-      return prediction
+      pass
 
 
 

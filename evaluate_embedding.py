@@ -78,7 +78,6 @@ def evaluate_embedding(embeddings, labels, search=True):
 
     linearsvc_accuracies = [linearsvc_classify(x, y, search) for _ in range(1)]
     # print(linearsvc_accuracies)
-    #print('LinearSvc', np.mean(linearsvc_accuracies),np.std(linearsvc_accuracies),np.var(linearsvc_accuracies))
     print('LinearSvc', np.mean(linearsvc_accuracies))
     '''
     randomforest_accuracies = [randomforest_classify(x, y, search) for _ in range(1)]
