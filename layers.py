@@ -1,4 +1,4 @@
-from dgvae.initializations import *
+from inits import *
 import tensorflow as tf
 
 flags = tf.app.flags
@@ -66,10 +66,10 @@ class Layer(object):
 
 class GraphConvolution(Layer):
     """Basic graph convolution layer for undirected graph without edge labels."""
-    def __init__(self, input_dim, output_dim, adj, dropout=0., act=tf.nn.relu, **kwargs):
+    def __init__(self, input_dim, output_dim, adj, dropout=0., act=tf.nn.relu, seed=123,**kwargs):
         super(GraphConvolution, self).__init__(**kwargs)
         with tf.variable_scope(self.name + '_vars'):
-            self.vars['weights'] = weight_variable_glorot(input_dim, output_dim, name="weights")
+            self.vars['weights'] = weight_variable_glorot(input_dim, output_dim, name="weights",seed=seed)
         self.dropout = dropout
         self.adj = adj
         self.act = act
@@ -85,10 +85,10 @@ class GraphConvolution(Layer):
 
 class GraphConvolutionSparse(Layer):
     """Graph convolution layer for sparse inputs."""
-    def __init__(self, input_dim, output_dim, adj, features_nonzero, dropout=0., act=tf.nn.relu, **kwargs):
+    def __init__(self, input_dim, output_dim, adj, features_nonzero, dropout=0., act=tf.nn.relu,seed=123, **kwargs):
         super(GraphConvolutionSparse, self).__init__(**kwargs)
         with tf.variable_scope(self.name + '_vars'):
-            self.vars['weights'] = weight_variable_glorot(input_dim, output_dim, name="weights")
+            self.vars['weights'] = weight_variable_glorot(input_dim, output_dim, name="weights",seed=seed)
         self.dropout = dropout
         self.adj = adj
         self.act = act
@@ -104,116 +104,3 @@ class GraphConvolutionSparse(Layer):
         return outputs
 
 
-class InnerProductDecoder(Layer):
-    """Decoder model layer for link prediction."""
-    def __init__(self, input_dim, dropout=0., act=tf.nn.sigmoid, **kwargs):
-        super(InnerProductDecoder, self).__init__(**kwargs)
-        self.dropout = dropout
-        self.act = act
-
-    def _call(self, inputs):
-        inputs = tf.nn.dropout(inputs, 1-self.dropout)
-        x = tf.transpose(inputs)
-        x = tf.matmul(inputs, x)
-        x = tf.reshape(x, [-1])
-        outputs = self.act(x)
-        return outputs
-
-class Graphite(Layer):
-    """Graphite layer for undirected graph without edge labels."""
-    def __init__(self, input_dim, output_dim, dropout=0., act=tf.nn.relu, **kwargs):
-        super(Graphite, self).__init__(**kwargs)
-        with tf.variable_scope(self.name + '_vars'):
-            self.vars['weights'] = weight_variable_glorot(input_dim, output_dim, name="weights")
-        self.dropout = dropout
-        self.act = act
-
-    def _call(self, inputs):
-        x = inputs[0]
-        recon_1 = inputs[1]
-        recon_2 = inputs[2]
-        x = tf.matmul(x, self.vars['weights'])
-        x = tf.matmul(recon_1, tf.matmul(tf.transpose(recon_1), x)) + tf.matmul(recon_2, tf.matmul(tf.transpose(recon_2), x))
-        outputs = self.act(x)
-        return outputs
-
-class GraphiteSparse(Layer):
-    """Graphite layer for sparse inputs."""
-    def __init__(self, input_dim, output_dim, dropout=0., act=tf.nn.relu, **kwargs):
-        super(GraphiteSparse, self).__init__(**kwargs)
-        with tf.variable_scope(self.name + '_vars'):
-            self.vars['weights'] = weight_variable_glorot(input_dim, output_dim, name="weights")
-        self.dropout = dropout
-        self.act = act
-
-    def _call(self, inputs):
-        x = inputs[0]
-        recon_1 = inputs[1]
-        recon_2 = inputs[2]
-        x = tf.sparse_tensor_dense_matmul(x, self.vars['weights'])
-        x = tf.matmul(recon_1, tf.matmul(tf.transpose(recon_1), x)) + tf.matmul(recon_2, tf.matmul(tf.transpose(recon_2), x))
-        outputs = self.act(x)
-        return outputs
-
-## scale layers of the sparse
-def zeros(shape, name=None):
-    """All zeros."""
-    initial = tf.zeros(shape, dtype=tf.float32)
-    return tf.Variable(initial, name=name)
-
-class Scale(Layer):
-    """Dense layer."""
-    def __init__(self, input_dim, dropout=0., pos=False, sparse_inputs=False,
-                 act=tf.nn.relu, bias=False, featureless=False, **kwargs):
-        super(Scale, self).__init__(**kwargs)
-
-        self.dropout = dropout
-        self.act = act
-        self.sparse_inputs = sparse_inputs
-        self.featureless = featureless
-        self.bias = bias
-
-        with tf.variable_scope(self.name + '_vars'):
-            self.vars['scale'] = zeros([1], name='weights')
-
-        if self.logging:
-            self._log_vars()
-
-    def _call(self, inputs):
-        x = inputs[0]
-        y = inputs[1]
-
-        return x * (1 - tf.nn.sigmoid(self.vars['scale'])) + y * tf.nn.sigmoid(self.vars['scale'])
-
-class Dense(Layer):
-    """Dense layer."""
-    def __init__(self, input_dim, output_dim, dropout=0., pos=False, sparse_inputs=False,
-                 act=tf.nn.relu, bias=False, featureless=False, **kwargs):
-        super(Dense, self).__init__(**kwargs)
-
-        self.dropout = dropout
-        self.act = act
-        self.sparse_inputs = sparse_inputs
-        self.featureless = featureless
-        self.bias = bias
-
-        with tf.variable_scope(self.name + '_vars'):
-            self.vars['weights'] = weight_variable_glorot(input_dim, output_dim, name='weights')
-            if pos:
-                self.vars['weights'] = tf.square(self.vars['weights'])
-            if self.bias:
-                self.vars['bias'] = zeros([output_dim], name='bias')
-
-        if self.logging:
-            self._log_vars()
-
-    def _call(self, inputs):
-        x = inputs
-
-        x = tf.nn.dropout(x, 1-self.dropout)
-        output = tf.matmul(x, self.vars['weights'])
-
-        # bias
-        if self.bias:
-            output += self.vars['bias']
-        return self.act(output)
