@@ -102,7 +102,7 @@ def fold_cv(data_index, FLAGS):
             result = sess.run(tf.reshape(layer_flat,[-1]), feed_dict=feed_dict)
             train_emb.append(result)
           train_emb = np.array(train_emb)
-          np.save('proteins',train_emb)
+          np.save('embeddings',train_emb)
       sess.close()
     else:
       pass
@@ -111,7 +111,7 @@ def fold_cv(data_index, FLAGS):
       prediction = evaluate_embedding(train_emb,ally)
       return prediction
     else:
-      train_emb = np.load("proteins.npy")
+      train_emb = np.load("embeddings.npy")
       prediction = evaluate_embedding(train_emb,ally)
       return prediction
 
