@@ -17,9 +17,6 @@ sklearn           0.20.1
 
 
 ```
-# Set up the environments
-
-pip install -r requirements.txt
 
 # Dataset
 DD,proteins,IMDB_M,IMDB_B,REDDIT_B
@@ -31,7 +28,12 @@ DD,proteins,IMDB_M,IMDB_B,REDDIT_B
  ```
 
 # Example
-```
+
 train from scratch
 ```
+python -W ignore main.py --train True
+```
+test from pretrained
+```
 python -W ignore main.py
+```
