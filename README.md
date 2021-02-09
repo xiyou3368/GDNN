@@ -17,9 +17,6 @@ sklearn           0.20.1
 
 
 ```
-# Set up the environments
-
-pip install -r requirements.txt
 
 # Dataset
 Default is IMDB_B, for other datasets, please refer to the branches, e.g., DD,proteins,IMDB_M,,REDDIT_B
@@ -31,7 +28,12 @@ Default is IMDB_B, for other datasets, please refer to the branches, e.g., DD,pr
  ```
 
 # Example
-```
+
 train from scratch
 ```
 python -W ignore main.py --train True
+```
+test from pretrained
+```
+python -W ignore main.py
+```
